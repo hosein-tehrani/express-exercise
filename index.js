@@ -9,7 +9,12 @@ app.get("/", (req, res) => {
   // res.send("welcome to expressJS!!!");
   // res.send("<h1>welcome to expressJS!!!</h1>");
   res.statusCode = 200;
-  res.json({ message: "welcome to expressJS!!!" });
+  res.send(
+    `<div>
+      <h1>welcome to expressJS!!!</h1>
+      <a href="/products">go to products</a>
+    </div>`,
+  );
   // or
   // res.status(200).send({ message: "welcome to expressJS!" });
 });
@@ -23,7 +28,15 @@ app.get("/products", async (req, res) => {
     .toArray();
   res.send({ statusCode: 200, data: { products: products } });
 });
+app.get("/add", async (req, res) => {
+  const db = await dbPromise;
 
+  const result = await db.collection("products").insertMany([
+    { name: "hat", price: 5500000 },
+    { name: "shoes", price: 6700000 },
+  ]);
+  res.send({ statusCode: 200, data: { result: result } });
+});
 app.get("/products/:id", async (req, res) => {
   const { id } = req.params;
   const db = await dbPromise;
