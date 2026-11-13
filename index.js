@@ -1,9 +1,15 @@
 const connectToMongoDB = require("./utils/mongodb-connection");
 const express = require("express");
+const queryString = require("querystring");
 const { ObjectId } = require("mongodb");
 const dbPromise = new connectToMongoDB().Get();
 const app = express();
 const PORT = 3000;
+app.use(express.json());
+app.use(express.urlencoded());
+app.post("/body", (req, res) => {
+  console.log(req.body);
+});
 app.get("/", (req, res) => {
   console.log("welcome");
   // res.send("welcome to expressJS!!!");
@@ -20,10 +26,18 @@ app.get("/", (req, res) => {
 });
 app.get("/products", async (req, res) => {
   const db = await dbPromise;
+  const { price, name } = req.query;
+
+  const filter = {};
+
+  if (typeof name === "string" && name.trim()) {
+    const safeName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.name = new RegExp(safeName, "gi");
+  }
 
   const products = await db
     .collection("products")
-    .find({})
+    .find(filter)
     .sort({ _id: 1 })
     .toArray();
   res.send({ statusCode: 200, data: { products: products } });
