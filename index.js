@@ -4,10 +4,10 @@ const { ObjectId } = require("mongodb");
 const dbPromise = new connectToMongoDB().Get();
 const app = express();
 const PORT = 3000;
+app.use(express.json());
+app.use(express.urlencoded());
 app.get("/", (req, res) => {
   console.log("welcome");
-  // res.send("welcome to expressJS!!!");
-  // res.send("<h1>welcome to expressJS!!!</h1>");
   res.statusCode = 200;
   res.send(
     `<div>
@@ -28,14 +28,18 @@ app.get("/products", async (req, res) => {
     .toArray();
   res.send({ statusCode: 200, data: { products: products } });
 });
-app.get("/add", async (req, res) => {
+app.post("/products", async (req, res) => {
   const db = await dbPromise;
-
-  const result = await db.collection("products").insertMany([
-    { name: "hat", price: 5500000 },
-    { name: "shoes", price: 6700000 },
-  ]);
-  res.send({ statusCode: 200, data: { result: result } });
+  const product = req.body;
+  if (product.name && product.price) {
+    const result = await db.collection("products").insertOne(product);
+    return res.send({ statusCode: 200, data: { result: result } });
+  } else {
+    return res.send({
+      statusCode: 404,
+      data: { message: "import name and price correct!" },
+    });
+  }
 });
 app.get("/products/:id", async (req, res) => {
   const { id } = req.params;
@@ -44,6 +48,26 @@ app.get("/products/:id", async (req, res) => {
     .collection("products")
     .findOne({ _id: new ObjectId(id) });
   if (!product) {
+    res.status(404).send({
+      status: 404,
+      error: {
+        message: "product not found!",
+      },
+    });
+  } else {
+    res.send({ statusCode: 200, data: { product: product } });
+  }
+});
+app.put("/products/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = await dbPromise;
+  const product = req.body;
+  const result = await db
+    .collection("products")
+    .updateOne({ _id: new ObjectId(id) }, { $set: product });
+  console.log(result);
+
+  if (!result.matchedCount) {
     res.status(404).send({
       status: 404,
       error: {
